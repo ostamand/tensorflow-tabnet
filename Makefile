@@ -2,4 +2,4 @@ lint:
 	black .
 
 test:
-	pytest .
+	pytest

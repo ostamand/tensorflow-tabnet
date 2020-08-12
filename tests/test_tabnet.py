@@ -2,8 +2,8 @@ import pytest
 import tensorflow as tf
 from tensorflow.python.framework.test_util import run_all_in_graph_and_eager_modes
 
-from tabnet.model import TabNet
-from tabnet.model import FeatureTransformerBlock
+from tabnet.models import TabNet
+from tabnet.models.transformers import FeatureTransformerBlock
 from tabnet.datasets.covertype import get_data, build_dataset
 
 
