@@ -1,0 +1,7 @@
+tensorflow
+black
+ipykernel
+pandas
+numpy
+sklearn
+pytest
