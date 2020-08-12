@@ -30,5 +30,5 @@ def build_dataset(
     ds: tf.data.Dataset = tf.data.Dataset.from_tensor_slices((x, y))
     if shuffle:
         ds = ds.shuffle(buffer_size=len(x))
-    ds = ds.batch(batch_size, drop_remainder=drop_remainder)
+    ds = ds.batch(batch_size, drop_remainder=drop_remainder).repeat()
     return ds

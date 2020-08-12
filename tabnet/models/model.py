@@ -19,6 +19,8 @@ class TabNet(tf.keras.Model):
         relaxation_factor: float = 1.5,
         epsilon: float = 1e-5,
         sparsity_coefficient: float = 1e-5,
+        bn_momentum: float = 0.7,
+        bn_virtual_bs: int = 512,
     ):
         """TabNet: Attentive Interpretable Tabular Learning
 
@@ -33,18 +35,27 @@ class TabNet(tf.keras.Model):
         self.n_step, self.relaxation_factor = n_step, relaxation_factor
         self.epsilon, self.sparsity_coefficient = epsilon, sparsity_coefficient
 
-        self.bn = tf.keras.layers.BatchNormalization()
+        self.bn = tf.keras.layers.BatchNormalization(
+            momentum=bn_momentum, virtual_batch_size=bn_virtual_bs
+        )
 
         # build feature transformer blocks
-        shared = SharedFeatureTransformer(feature_dim + output_dim)
+        shared = SharedFeatureTransformer(
+            feature_dim + output_dim, bn_momentum, bn_virtual_bs,
+        )
+
         self.feature_transforms: List[FeatureTransformer] = []
         self.attentive_transforms: List[AttentiveTransformer] = []
         for _ in range(n_step + 1):
             self.feature_transforms.append(
-                FeatureTransformer(shared, feature_dim + output_dim)
+                FeatureTransformer(
+                    shared, feature_dim + output_dim, bn_momentum, bn_virtual_bs
+                )
             )
         for _ in range(n_step):
-            self.attentive_transforms.append(AttentiveTransformer(num_features))
+            self.attentive_transforms.append(
+                AttentiveTransformer(num_features, bn_momentum, bn_virtual_bs)
+            )
 
     def call(self, features, training=None):
         bs = tf.shape(features)[0]
