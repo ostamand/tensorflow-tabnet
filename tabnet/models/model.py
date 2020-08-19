@@ -1,12 +1,50 @@
-from typing import List
+from typing import List, Tuple
+
 import tensorflow as tf
 
-from tabnet.models.utils import sparsemax
 from tabnet.models.transformers import (
     FeatureTransformer,
-    SharedFeatureTransformer,
     AttentiveTransformer,
 )
+
+
+class TabNetClassifier(tf.keras.Model):
+    def __init__(
+        self,
+        num_features: int,
+        feature_dim: int,
+        output_dim: int,
+        n_classes: int,
+        feature_columns: List = None,
+        n_step: int = 1,
+        n_total: int = 4,
+        n_shared: int = 2,
+        relaxation_factor: float = 1.5,
+        sparsity_coefficient: float = 1e-5,
+        bn_epsilon: float = 1e-5,
+        bn_momentum: float = 0.7,
+        bn_virtual_bs: int = 512,
+    ):
+        super(TabNetClassifier, self).__init__()
+        self.model = TabNet(
+            feature_columns=feature_columns,
+            num_features=num_features,
+            feature_dim=feature_dim,
+            output_dim=output_dim,
+            n_step=n_step,
+            relaxation_factor=relaxation_factor,
+            sparsity_coefficient=sparsity_coefficient,
+            bn_epsilon=bn_epsilon,
+            bn_momentum=bn_momentum,
+            bn_virtual_bs=bn_virtual_bs,
+        )
+        self.head = tf.keras.layers.Dense(
+            n_classes, activation=None, use_bias=False
+        )
+
+    def call(self, x, training: bool = None):
+        x = self.model(x, training=training)
+        return self.head(x, training=training)
 
 
 class TabNet(tf.keras.Model):
@@ -15,28 +53,44 @@ class TabNet(tf.keras.Model):
         num_features: int,
         feature_dim: int,
         output_dim: int,
-        feature_columns = None,
+        feature_columns: List = None,
         n_step: int = 1,
         n_total: int = 4,
         n_shared: int = 2,
         relaxation_factor: float = 1.5,
         sparsity_coefficient: float = 1e-5,
-        epsilon: float = 1e-5,
+        bn_epsilon: float = 1e-5,
         bn_momentum: float = 0.7,
         bn_virtual_bs: int = 512,
     ):
+        """TabNet
+
+        Will output a vector of size output_dim.
+
+        Args:
+            num_features (int): Number of features.
+            feature_dim (int): Embedding feature dimention to use.
+            output_dim (int): Output dimension.
+            feature_columns (List, optional): If defined will add a DenseFeatures layer first. Defaults to None.
+            n_step (int, optional): Total number of steps. Defaults to 1.
+            n_total (int, optional): Total number of feature transformer blocks. Defaults to 4.
+            n_shared (int, optional): Number of shared feature transformer blocks. Defaults to 2.
+            relaxation_factor (float, optional): >1 will allow features to be used more than once. Defaults to 1.5.
+            sparsity_coefficient (float, optional): Sparsity coefficient for loss. Defaults to 1e-5.
+            bn_epsilon (float, optional): Batch normalization, epsilon. Defaults to 1e-5.
+            bn_momentum (float, optional): Batch normalization, momentum. Defaults to 0.7.
+            bn_virtual_bs (int, optional): Batch normalization, virtual batch size. Defaults to 512.
+        """
         super(TabNet, self).__init__()
         self.output_dim, self.num_features = output_dim, num_features
         self.n_step, self.relaxation_factor = n_step, relaxation_factor
-        self.epsilon = epsilon
-        self.feature_columns = feature_columns
         self.sparsity_coefficient = sparsity_coefficient
 
         if feature_columns is not None:
             self.input_features = tf.keras.layers.DenseFeatures(feature_columns)
 
         self.bn = tf.keras.layers.BatchNormalization(
-            momentum=bn_momentum, epsilon=1e-5 # virtual_batch_size=bn_virtual_bs,
+            momentum=bn_momentum, epsilon=bn_epsilon
         )
 
         kargs = {
@@ -60,7 +114,7 @@ class TabNet(tf.keras.Model):
                 AttentiveTransformer(num_features, bn_momentum, bn_virtual_bs)
             )
 
-    def call(self, features: tf.Tensor, training=None) -> Tuple[tf.Tensor, tf.Tensor]:
+    def call(self, features: tf.Tensor, training: bool = None) -> Tuple[tf.Tensor, tf.Tensor]:
         if self.input_features is not None:
             features = self.input_features(features)
 
@@ -89,7 +143,7 @@ class TabNet(tf.keras.Model):
                 )
 
                 # relaxation factor of 1 forces the feature to be only used once.
-                prior_scales *= (self.relaxation_factor - mask_values)
+                prior_scales *= self.relaxation_factor - mask_values
 
                 masked_features = tf.multiply(mask_values, features)
 
@@ -97,7 +151,7 @@ class TabNet(tf.keras.Model):
                 total_entropy = tf.reduce_mean(
                     tf.reduce_sum(
                         tf.multiply(mask_values, tf.math.log(mask_values + 1e-15)),
-                        axis=1
+                        axis=1,
                     )
                 )
 

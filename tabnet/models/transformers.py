@@ -1,3 +1,5 @@
+from typing import List
+
 import tensorflow as tf
 from tensorflow_addons.activations import sparsemax
 
@@ -12,6 +14,7 @@ class FeatureBlock(tf.keras.Model):
         bn_momentum: float = 0.9,
         bn_virtual_bs: int = 512,
         fc: tf.keras.layers.Layer = None,
+        epsilon: float = 1e-5,
     ):
         super(FeatureBlock, self).__init__()
         self.apply_gpu = apply_glu
@@ -20,7 +23,9 @@ class FeatureBlock(tf.keras.Model):
 
         self.fc = tf.keras.layers.Dense(units, use_bias=False) if fc is None else fc
         # batch norm are not shared
-        self.bn = tf.keras.layers.BatchNormalization(momentum=bn_momentum, virtual_batch_size=bn_virtual_bs, epsilon=1e-5)
+        self.bn = tf.keras.layers.BatchNormalization(
+            momentum=bn_momentum, virtual_batch_size=bn_virtual_bs, epsilon=epsilon
+        )
 
     def call(self, x, training=None):
         x = self.fc(x)
