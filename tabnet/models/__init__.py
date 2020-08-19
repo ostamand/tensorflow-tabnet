@@ -1,1 +1,1 @@
-from tabnet.models.model import TabNet
+from tabnet.models.model import TabNet, TabNetClassifier
