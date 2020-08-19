@@ -8,43 +8,6 @@ from tabnet.models.transformers import (
 )
 
 
-class TabNetClassifier(tf.keras.Model):
-    def __init__(
-        self,
-        num_features: int,
-        feature_dim: int,
-        output_dim: int,
-        n_classes: int,
-        feature_columns: List = None,
-        n_step: int = 1,
-        n_total: int = 4,
-        n_shared: int = 2,
-        relaxation_factor: float = 1.5,
-        sparsity_coefficient: float = 1e-5,
-        bn_epsilon: float = 1e-5,
-        bn_momentum: float = 0.7,
-        bn_virtual_bs: int = 512,
-    ):
-        super(TabNetClassifier, self).__init__()
-        self.model = TabNet(
-            feature_columns=feature_columns,
-            num_features=num_features,
-            feature_dim=feature_dim,
-            output_dim=output_dim,
-            n_step=n_step,
-            relaxation_factor=relaxation_factor,
-            sparsity_coefficient=sparsity_coefficient,
-            bn_epsilon=bn_epsilon,
-            bn_momentum=bn_momentum,
-            bn_virtual_bs=bn_virtual_bs,
-        )
-        self.head = tf.keras.layers.Dense(n_classes, activation=None, use_bias=False)
-
-    def call(self, x, training: bool = None):
-        x = self.model(x, training=training)
-        return self.head(x, training=training)
-
-
 class TabNet(tf.keras.Model):
     def __init__(
         self,
@@ -56,7 +19,6 @@ class TabNet(tf.keras.Model):
         n_total: int = 4,
         n_shared: int = 2,
         relaxation_factor: float = 1.5,
-        sparsity_coefficient: float = 1e-5,
         bn_epsilon: float = 1e-5,
         bn_momentum: float = 0.7,
         bn_virtual_bs: int = 512,
@@ -74,7 +36,6 @@ class TabNet(tf.keras.Model):
             n_total (int, optional): Total number of feature transformer blocks. Defaults to 4.
             n_shared (int, optional): Number of shared feature transformer blocks. Defaults to 2.
             relaxation_factor (float, optional): >1 will allow features to be used more than once. Defaults to 1.5.
-            sparsity_coefficient (float, optional): Sparsity coefficient for loss. Defaults to 1e-5.
             bn_epsilon (float, optional): Batch normalization, epsilon. Defaults to 1e-5.
             bn_momentum (float, optional): Batch normalization, momentum. Defaults to 0.7.
             bn_virtual_bs (int, optional): Batch normalization, virtual batch size. Defaults to 512.
@@ -82,7 +43,6 @@ class TabNet(tf.keras.Model):
         super(TabNet, self).__init__()
         self.output_dim, self.num_features = output_dim, num_features
         self.n_step, self.relaxation_factor = n_step, relaxation_factor
-        self.sparsity_coefficient = sparsity_coefficient
 
         if feature_columns is not None:
             self.input_features = tf.keras.layers.DenseFeatures(feature_columns)
@@ -121,6 +81,7 @@ class TabNet(tf.keras.Model):
         bs = tf.shape(features)[0]
         out_agg = tf.zeros((bs, self.output_dim))
         prior_scales = tf.ones((bs, self.num_features))
+        masks = []
 
         features = self.bn(features, training=training)
         masked_features = features
@@ -155,7 +116,8 @@ class TabNet(tf.keras.Model):
                     )
                 )
 
-        if training:
-            self.add_loss(-self.sparsity_coefficient * total_entropy / self.n_step)
+                masks.append(tf.expand_dims(tf.expand_dims(mask_values, 0), 3))
 
-        return out_agg
+        loss = total_entropy / self.n_step
+
+        return out_agg, loss, masks
