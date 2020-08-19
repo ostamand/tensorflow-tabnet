@@ -38,9 +38,7 @@ class TabNetClassifier(tf.keras.Model):
             bn_momentum=bn_momentum,
             bn_virtual_bs=bn_virtual_bs,
         )
-        self.head = tf.keras.layers.Dense(
-            n_classes, activation=None, use_bias=False
-        )
+        self.head = tf.keras.layers.Dense(n_classes, activation=None, use_bias=False)
 
     def call(self, x, training: bool = None):
         x = self.model(x, training=training)
@@ -114,7 +112,9 @@ class TabNet(tf.keras.Model):
                 AttentiveTransformer(num_features, bn_momentum, bn_virtual_bs)
             )
 
-    def call(self, features: tf.Tensor, training: bool = None) -> Tuple[tf.Tensor, tf.Tensor]:
+    def call(
+        self, features: tf.Tensor, training: bool = None
+    ) -> Tuple[tf.Tensor, tf.Tensor]:
         if self.input_features is not None:
             features = self.input_features(features)
 
@@ -125,7 +125,7 @@ class TabNet(tf.keras.Model):
         features = self.bn(features, training=training)
         masked_features = features
 
-        total_entropy = 0.
+        total_entropy = 0.0
 
         for step_i in range(self.n_step + 1):
             x = self.feature_transforms[step_i](masked_features, training=training)
