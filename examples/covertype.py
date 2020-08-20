@@ -77,7 +77,7 @@ def train(
         relaxation_factor=CONFIGS["relaxation_factor"],
         sparsity_coefficient=sparsity_coefficient,
         bn_momentum=bn_momentum,
-        bn_virtual_bs=bn_virtual_bs,
+        bn_virtual_divider=int(CONFIGS["batch_size"] / CONFIGS["bn_virtual_bs"]),
         dp=CONFIGS["dp"],
     )
 

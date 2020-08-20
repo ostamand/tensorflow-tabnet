@@ -21,7 +21,7 @@ class TabNet(tf.keras.Model):
         relaxation_factor: float = 1.5,
         bn_epsilon: float = 1e-5,
         bn_momentum: float = 0.7,
-        bn_virtual_bs: int = 512,
+        bn_virtual_divider: int = 1,
     ):
         """TabNet
 
@@ -38,7 +38,7 @@ class TabNet(tf.keras.Model):
             relaxation_factor (float, optional): >1 will allow features to be used more than once. Defaults to 1.5.
             bn_epsilon (float, optional): Batch normalization, epsilon. Defaults to 1e-5.
             bn_momentum (float, optional): Batch normalization, momentum. Defaults to 0.7.
-            bn_virtual_bs (int, optional): Batch normalization, virtual batch size. Defaults to 512.
+            bn_virtual_divider (int, optional): Batch normalization. Full batch will be divided by this.
         """
         super(TabNet, self).__init__()
         self.output_dim, self.num_features = output_dim, num_features
@@ -57,7 +57,7 @@ class TabNet(tf.keras.Model):
             "n_total": n_total,
             "n_shared": n_shared,
             "bn_momentum": bn_momentum,
-            "bn_virtual_bs": bn_virtual_bs,
+            "bn_virtual_divider": bn_virtual_divider,
         }
 
         # first feature transformer block is built first to get the shared blocks
@@ -70,7 +70,7 @@ class TabNet(tf.keras.Model):
                 FeatureTransformer(**kargs, fcs=self.feature_transforms[0].shared_fcs)
             )
             self.attentive_transforms.append(
-                AttentiveTransformer(num_features, bn_momentum, bn_virtual_bs)
+                AttentiveTransformer(num_features, bn_momentum, bn_virtual_divider)
             )
 
     def call(

@@ -24,7 +24,7 @@ def dataset():
 
 @run_all_in_graph_and_eager_modes
 def test_feature_transformer_block(features):
-    block = FeatureBlock(FEATURE_DIM, apply_glu=True, bn_virtual_bs=32)
+    block = FeatureBlock(FEATURE_DIM, apply_glu=True, bn_virtual_divider=1)
     x = block(features, training=False)
     assert x.shape[1] == features.shape[1]
 

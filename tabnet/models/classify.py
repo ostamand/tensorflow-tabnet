@@ -19,7 +19,7 @@ class TabNetClassifier(tf.keras.Model):
         sparsity_coefficient: float = 1e-5,
         bn_epsilon: float = 1e-5,
         bn_momentum: float = 0.7,
-        bn_virtual_bs: int = 512,
+        bn_virtual_divider: int = 32,
         dp: float = None,
         **kwargs
     ):
@@ -35,7 +35,7 @@ class TabNetClassifier(tf.keras.Model):
             relaxation_factor=relaxation_factor,
             bn_epsilon=bn_epsilon,
             bn_momentum=bn_momentum,
-            bn_virtual_bs=bn_virtual_bs,
+            bn_virtual_divider=bn_virtual_divider,
         )
         self.dp = tf.keras.layers.Dropout(dp) if dp is not None else dp
         self.head = tf.keras.layers.Dense(n_classes, activation=None, use_bias=False)
