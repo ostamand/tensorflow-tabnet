@@ -3,6 +3,7 @@ import os
 from typing import Text
 from datetime import datetime
 import json
+import shutil
 
 import tensorflow as tf
 import numpy as np
@@ -12,7 +13,7 @@ from tabnet.datasets.covertype import get_dataset, get_data
 
 
 LOGDIR = ".logs"
-OUTDIR = ".outs"
+OUTDIR = ".outs/test"
 DATA_PATH = "data/covtype.csv"
 CONFIGS = {
     "feature_dim": 64,
@@ -31,6 +32,7 @@ CONFIGS = {
     "total_steps": 130000,
     "clipnorm": 2.0,
     "patience": 200,
+    "dp": 0.2,
 }
 
 
@@ -46,17 +48,25 @@ def train(
     learning_rate: float,
     sparsity_coefficient: float,
     epochs: int,
+    cleanup: bool,
 ):
+    out_dir = os.path.join(out_dir, run_name)
+    if cleanup and os.path.exists(out_dir):
+        shutil.rmtree(out_dir)
+
     df_tr, df_val, df_test = get_data(data_path)
 
     ds_tr = get_dataset(df_tr, shuffle=True, batch_size=CONFIGS["batch_size"])
-    # TODO check drop_remainder
-    ds_val = get_dataset(df_val, shuffle=False, batch_size=CONFIGS["batch_size"])
-    ds_test = get_dataset(df_test, shuffle=False, batch_size=CONFIGS["batch_size"])
+    ds_val = get_dataset(
+        df_val, shuffle=False, batch_size=CONFIGS["batch_size"], drop_remainder=False
+    )
+    ds_test = get_dataset(
+        df_test, shuffle=False, batch_size=CONFIGS["batch_size"], drop_remainder=False
+    )
 
     num_train_steps = np.floor(len(df_tr) / CONFIGS["batch_size"])
-    num_valid_steps = np.floor(len(df_val) / CONFIGS["batch_size"])
-    num_test_steps = np.floor(len(df_test) / CONFIGS["batch_size"])
+    num_valid_steps = np.ceil(len(df_val) / CONFIGS["batch_size"])
+    num_test_steps = np.ceil(len(df_test) / CONFIGS["batch_size"])
 
     model = TabNetClassifier(
         num_features=CONFIGS["num_features"],
@@ -68,6 +78,7 @@ def train(
         sparsity_coefficient=sparsity_coefficient,
         bn_momentum=bn_momentum,
         bn_virtual_bs=bn_virtual_bs,
+        dp=CONFIGS["dp"],
     )
 
     lr = tf.keras.optimizers.schedules.ExponentialDecay(
@@ -99,7 +110,7 @@ def train(
     if os.path.exists(log_dir):
         shutil.rmtree(log_dir)
 
-    checkpoint_path = os.path.join(OUTDIR, "checkpoint")
+    checkpoint_path = os.path.join(out_dir, "checkpoint")
 
     callbacks = [
         tf.keras.callbacks.TensorBoard(
@@ -130,16 +141,15 @@ def train(
     # evaluate
 
     metrics = model.evaluate(ds_test, steps=num_test_steps, return_dict=True)
-    if not os.path.exists(OUTDIR):
-        os.makedirs(OUTDIR)
-    with open(os.path.join(OUTDIR, "test_results.json"), "w") as f:
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+    with open(os.path.join(out_dir, "test_results.json"), "w") as f:
         json.dump(metrics, f)
-
-    model.save()
 
     print(metrics)
 
 
+# example: python examples/covertype.py --run_name add_dp --epochs 200
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("TabNet Covertype Training")
     parser.add_argument("--run_name", default=None, type=str)
@@ -155,6 +165,11 @@ if __name__ == "__main__":
         "--sparsity_coefficient", default=CONFIGS["sparsity_coefficient"], type=float
     )
     parser.add_argument("--epochs", default=None, type=int)
+    parser.add_argument(
+        "--cleanup",
+        action="store_true",
+        help="Cleanup the output folder before starting the training.",
+    )
     args = parser.parse_args()
 
     train(
@@ -169,4 +184,5 @@ if __name__ == "__main__":
         args.learning_rate,
         args.sparsity_coefficient,
         args.epochs,
+        args.cleanup,
     )

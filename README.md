@@ -1,4 +1,4 @@
-# Tested TensorFlow TabNet
+# TensorFlow TabNet
 
 A TensorFlow 2.X implementation of the paper [TabNet](https://arxiv.org/abs/1908.07442).
 
@@ -32,6 +32,5 @@ chmod +x scripts/install.sh; ./scripts/install.sh
 - https://www.kaggle.com/uciml/forest-cover-type-dataset/data#
 
 ## Reference
-- [paper](https://arxiv.org/abs/1908.07442)
-- [tf-TabNet TF2.0](https://github.com/titu1994/tf-TabNet)
-- [original code base](https://github.com/google-research/google-research/tree/master/tabnet)
+- [TabNet paper](https://arxiv.org/abs/1908.07442)
+- [original TF1 code base](https://github.com/google-research/google-research/tree/master/tabnet)

@@ -20,6 +20,7 @@ class TabNetClassifier(tf.keras.Model):
         bn_epsilon: float = 1e-5,
         bn_momentum: float = 0.7,
         bn_virtual_bs: int = 512,
+        dp: float = None,
         **kwargs
     ):
         super(TabNetClassifier, self).__init__()
@@ -36,12 +37,16 @@ class TabNetClassifier(tf.keras.Model):
             bn_momentum=bn_momentum,
             bn_virtual_bs=bn_virtual_bs,
         )
-
+        self.dp = tf.keras.layers.Dropout(dp) if dp is not None else dp
         self.head = tf.keras.layers.Dense(n_classes, activation=None, use_bias=False)
 
     def call(self, x, training: bool = None):
         out, sparse_loss, _ = self.model(x, training=training)
+        if self.dp is not None:
+            out = self.dp(out, training=training)
+        y = self.head(out, training=training)
+
         if training:
             self.add_loss(-self.sparsity_coefficient * sparse_loss)
-        y = self.head(out, training=training)
+
         return y

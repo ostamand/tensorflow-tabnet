@@ -4,6 +4,7 @@ import tensorflow as tf
 from tensorflow_addons.activations import sparsemax
 
 from tabnet.models.utils import glu
+from tabnet.models.gbn import GhostBatchNormalization
 
 
 class FeatureBlock(tf.keras.Model):
@@ -23,9 +24,10 @@ class FeatureBlock(tf.keras.Model):
 
         self.fc = tf.keras.layers.Dense(units, use_bias=False) if fc is None else fc
         # batch norm are not shared
-        self.bn = tf.keras.layers.BatchNormalization(
-            momentum=bn_momentum, virtual_batch_size=bn_virtual_bs, epsilon=epsilon
-        )
+        # self.bn = tf.keras.layers.BatchNormalization(momentum=bn_momentum, virtual_batch_size=bn_virtual_bs, epsilon=epsilon)
+
+        # 16384 / 512 = 32
+        self.bn = GhostBatchNormalization(virtual_divider=32, momentum=bn_momentum)
 
     def call(self, x, training=None):
         x = self.fc(x)
