@@ -45,7 +45,7 @@ def train(
     decay_steps: int,
     learning_rate: float,
     sparsity_coefficient: float,
-    epochs: int
+    epochs: int,
 ):
     df_tr, df_val, df_test = get_data(data_path)
 
@@ -71,15 +71,10 @@ def train(
     )
 
     lr = tf.keras.optimizers.schedules.ExponentialDecay(
-        learning_rate,
-        decay_steps=decay_steps,
-        decay_rate=decay_rate,
-        staircase=False,
+        learning_rate, decay_steps=decay_steps, decay_rate=decay_rate, staircase=False,
     )
 
-    optimizer = tf.keras.optimizers.Adam(
-        learning_rate=lr, clipnorm=clipnorm
-    )
+    optimizer = tf.keras.optimizers.Adam(learning_rate=lr, clipnorm=clipnorm)
 
     lossf = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
 
@@ -89,7 +84,11 @@ def train(
         metrics=[tf.keras.metrics.SparseCategoricalAccuracy(name="accuracy")],
     )
 
-    epochs = int(np.ceil(CONFIGS["total_steps"] / num_train_steps)) if epochs is None else epochs
+    epochs = (
+        int(np.ceil(CONFIGS["total_steps"] / num_train_steps))
+        if epochs is None
+        else epochs
+    )
 
     log_dir = (
         os.path.join(LOGDIR, datetime.strftime(datetime.now(), "%Y-%m-%d-%H-%M-%S"))
@@ -133,7 +132,7 @@ def train(
     metrics = model.evaluate(ds_test, steps=num_test_steps, return_dict=True)
     if not os.path.exists(OUTDIR):
         os.makedirs(OUTDIR)
-    with open(os.path.join(OUTDIR, "results.json"), "w") as f:
+    with open(os.path.join(OUTDIR, "test_results.json"), "w") as f:
         json.dump(metrics, f)
 
     model.save()
@@ -152,7 +151,9 @@ if __name__ == "__main__":
     parser.add_argument("--decay_rate", default=CONFIGS["decay_rate"], type=float)
     parser.add_argument("--decay_steps", default=CONFIGS["decay_steps"], type=int)
     parser.add_argument("--learning_rate", default=CONFIGS["learning_rate"], type=int)
-    parser.add_argument("--sparsity_coefficient", default=CONFIGS["sparsity_coefficient"], type=float)
+    parser.add_argument(
+        "--sparsity_coefficient", default=CONFIGS["sparsity_coefficient"], type=float
+    )
     parser.add_argument("--epochs", default=None, type=int)
     args = parser.parse_args()
 
@@ -167,5 +168,5 @@ if __name__ == "__main__":
         args.decay_steps,
         args.learning_rate,
         args.sparsity_coefficient,
-        args.epochs
+        args.epochs,
     )
