@@ -5,8 +5,8 @@ A TensorFlow 2.X implementation of the paper [TabNet](https://arxiv.org/abs/1908
 TabNet is already available for TF2 [here](https://github.com/titu1994/tf-TabNet). However, an error in the batch normalizations of the shared feature transformer blocks makes it unable to learn. In the original code, only the fully connected layers weights are shared, not the batch normalizations which remain unique. When sharing the batch normalizations, training of TabNet on the datasets & hyperparameters of the original paper yields extremely bad results.
 
 Moreover, the implementation uses `virtual_batch_size` from `tf.keras.layers.BatchNormalization` which has a couple of issues:
-- Does not allow batch size which can't be divided by the selected virtual batch size used during training (even for inference which should be independent of batch size).
-- Less update of the batch normalizations wrt to Ghost Batch Normalization.
+- Does not allow batch size which can't be divided by the  virtual batch size used during training (even for inference which should be independent of batch size).
+- Less update of the batch normalizations with respect to a vanilla Ghost Batch Normalization.
 
 Below is a plot of the accuracy for a model trained with a correct Ghost Batch Normalization and one trained with the incorrect `virtual_batch_size`:
 
