@@ -43,6 +43,7 @@ class TabNet(tf.keras.Model):
         super(TabNet, self).__init__()
         self.output_dim, self.num_features = output_dim, num_features
         self.n_step, self.relaxation_factor = n_step, relaxation_factor
+        self.feature_columns  = feature_columns
 
         if feature_columns is not None:
             self.input_features = tf.keras.layers.DenseFeatures(feature_columns)
@@ -75,7 +76,7 @@ class TabNet(tf.keras.Model):
     def call(
         self, features: tf.Tensor, training: bool = None
     ) -> Tuple[tf.Tensor, tf.Tensor]:
-        if self.input_features is not None:
+        if self.feature_columns is not None:
             features = self.input_features(features)
 
         bs = tf.shape(features)[0]

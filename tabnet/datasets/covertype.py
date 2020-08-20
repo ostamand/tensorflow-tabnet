@@ -22,10 +22,10 @@ def get_dataset(
     df: pd.DataFrame,
     shuffle: bool = False,
     batch_size: int = 16384,
-    drop_remainder: bool = False,
+    drop_remainder: bool = True,
 ) -> tf.data.Dataset:
     x = df[df.columns[:-1]].values.astype(np.float32)
-    y = df[df.columns[-1]].values
+    y = df[df.columns[-1]].values - 1
     ds: tf.data.Dataset = tf.data.Dataset.from_tensor_slices((x, y))
     if shuffle:
         ds = ds.shuffle(buffer_size=len(x))

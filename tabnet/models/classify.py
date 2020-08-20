@@ -20,6 +20,7 @@ class TabNetClassifier(tf.keras.Model):
         bn_epsilon: float = 1e-5,
         bn_momentum: float = 0.7,
         bn_virtual_bs: int = 512,
+        **kwargs
     ):
         super(TabNetClassifier, self).__init__()
         self.sparsity_coefficient = sparsity_coefficient
@@ -42,5 +43,5 @@ class TabNetClassifier(tf.keras.Model):
         out, sparse_loss, _ = self.model(x, training=training)
         if training:
             self.add_loss(-self.sparsity_coefficient * sparse_loss)
-        y = self.head(x, training=training)
+        y = self.head(out, training=training)
         return y
