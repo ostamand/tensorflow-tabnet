@@ -100,16 +100,18 @@ def train(
     if os.path.exists(log_dir):
         shutil.rmtree(log_dir)
 
+    checkpoint_path = os.path.join(OUTDIR, "checkpoint")
+
     callbacks = [
         tf.keras.callbacks.TensorBoard(
             log_dir=log_dir, write_graph=True, profile_batch=0
         ),
-        tf.keras.callbacks.EarlyStopping(
+        tf.keras.callbacks.ModelCheckpoint(
+            filepath=checkpoint_path,
             monitor="val_accuracy",
-            patience=CONFIGS["patience"],
             verbose=1,
             mode="max",
-            restore_best_weights=True,
+            save_best_only=True,
         ),
     ]
 
@@ -124,6 +126,8 @@ def train(
         callbacks=callbacks,
     )
 
+    model.load_weights(checkpoint_path)
+
     # evaluate
 
     metrics = model.evaluate(ds_test, steps=num_test_steps, return_dict=True)
@@ -132,7 +136,7 @@ def train(
     with open(os.path.join(OUTDIR, "results.json"), "w") as f:
         json.dump(metrics, f)
 
-    model.save(os.path.join(OUTDIR, "tabnet"))
+    model.save()
 
     print(metrics)
 
