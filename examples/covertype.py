@@ -10,7 +10,8 @@ import numpy as np
 
 from tabnet.models.classify import TabNetClassifier
 from tabnet.datasets.covertype import get_dataset, get_data
-
+from tabnet.callbacks.tensorboard import TensorBoardWithLR
+from tabnet.schedules import DecayWithWarmupSchedule
 
 LOGDIR = ".logs"
 OUTDIR = ".outs/test"
@@ -27,6 +28,7 @@ CONFIGS = {
     "relaxation_factor": 1.5,
     "n_classes": 7,
     "learning_rate": 0.02,
+    "min_learning_rate": 1e-6,
     "decay_steps": 500,
     "decay_rate": 0.95,
     "total_steps": 130000,
@@ -49,6 +51,7 @@ def train(
     sparsity_coefficient: float,
     epochs: int,
     cleanup: bool,
+    warmup: int,
 ):
     out_dir = os.path.join(out_dir, run_name)
     if cleanup and os.path.exists(out_dir):
@@ -81,9 +84,21 @@ def train(
         dp=CONFIGS["dp"],
     )
 
-    lr = tf.keras.optimizers.schedules.ExponentialDecay(
-        learning_rate, decay_steps=decay_steps, decay_rate=decay_rate, staircase=False,
-    )
+    if warmup:
+        lr = DecayWithWarmupSchedule(
+            learning_rate,
+            CONFIGS["min_learning_rate"],
+            warmup,
+            decay_rate,
+            decay_steps
+        )
+    else:
+        lr = tf.keras.optimizers.schedules.ExponentialDecay(
+            learning_rate,
+            decay_steps=decay_steps,
+            decay_rate=decay_rate,
+            staircase=False,
+        )
 
     optimizer = tf.keras.optimizers.Adam(learning_rate=lr, clipnorm=clipnorm)
 
@@ -113,9 +128,7 @@ def train(
     checkpoint_path = os.path.join(out_dir, "checkpoint")
 
     callbacks = [
-        tf.keras.callbacks.TensorBoard(
-            log_dir=log_dir, write_graph=True, profile_batch=0
-        ),
+        TensorBoardWithLR(log_dir=log_dir, write_graph=True, profile_batch=0),
         tf.keras.callbacks.ModelCheckpoint(
             filepath=checkpoint_path,
             monitor="val_accuracy",
@@ -149,7 +162,7 @@ def train(
     print(metrics)
 
 
-# example: python examples/covertype.py --run_name add_dp --epochs 200
+# example: python examples/covertype.py --run_name new-bn --epochs 1000 --warmup 100
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("TabNet Covertype Training")
     parser.add_argument("--run_name", default=None, type=str)
@@ -170,6 +183,7 @@ if __name__ == "__main__":
         action="store_true",
         help="Cleanup the output folder before starting the training.",
     )
+    parser.add_argument("--warmup", default=None, type=int)
     args = parser.parse_args()
 
     train(
@@ -185,4 +199,5 @@ if __name__ == "__main__":
         args.sparsity_coefficient,
         args.epochs,
         args.cleanup,
+        args.warmup,
     )
