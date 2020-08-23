@@ -1,5 +1,8 @@
+import os
+import shutil
 import pytest
 import tensorflow as tf
+import numpy as np
 from tensorflow.python.framework.test_util import run_all_in_graph_and_eager_modes
 
 from tabnet.models import TabNet
@@ -9,42 +12,59 @@ from tabnet.datasets.covertype import get_data, get_dataset
 
 COVTYPE_CSV_PATH = "data/covtype.csv"
 FEATURE_DIM = 50
+TMP_DIR = ".tmp"
 
 
-class TabNetTest(tf.test.TestCase):
-    def setUp(self):
-        df_tr, _, _ = get_data(COVTYPE_CSV_PATH)
-        self.dataset = get_dataset(df_tr)
-        self.x, _ = next(iter(self.dataset))
-        self.feature_dim = FEATURE_DIM
-        self.features = tf.random.uniform([32, FEATURE_DIM], -1.0, 1.0)
+@pytest.fixture()
+def features():
+    return tf.random.uniform([32, FEATURE_DIM], -1.0, 1.0)
 
-    def test_feature_transformer_block(self):
-        block = FeatureBlock(self.feature_dim, apply_glu=True, bn_virtual_divider=1)
-        x = block(self.features, training=False)
-        assert x.shape[1] == self.features.shape[1]
 
-    def test_tabnet_model(self):
-        model = TabNet(self.x.shape[1], feature_dim=16, output_dim=16, n_step=2)
-        y, _, _ = model(self.x, training=True)
-        assert y.shape[0] == self.x.shape[0]
+@pytest.fixture()
+def model(features):
+    model = TabNet(features.shape[1], feature_dim=16, output_dim=16, n_step=2)
+    model.build(features.shape)
+    return model
+
+
+@pytest.fixture()
+def saved_model_path(model: tf.keras.Model):
+    path = os.path.join(TMP_DIR, "saved_model")
+    model.save_weights(path, overwrite=True)
+    yield path
+    shutil.rmtree(TMP_DIR)
+
+
+class TestTabNet():
+
+    def test_feature_transformer_block(self, features):
+        block = FeatureBlock(FEATURE_DIM, apply_glu=True, bn_virtual_divider=1)
+        x = block(features, training=False)
+        assert x.shape[1] == features.shape[1]
+
+    def test_tabnet_model(self, model, features):
+        y, _, _ = model(features, training=True)
+        assert y.shape[0] == features.shape[0]
         assert y.shape[1] == 16
 
-    def test_tabnet_with_alpha(self):
+    def test_tabnet_with_alpha(self, model, features):
         # in training mode alpha should change nothing
-        model = TabNet(self.x.shape[1], feature_dim=16, output_dim=16, n_step=2)
-        y_with_alpha, _, _ = model(self.x, training=True, alpha=0.5)
-        y_no_alpha, _, _ = model(self.x, training=True)
+        y_with_alpha, _, _ = model(features, training=True, alpha=0.5)
+        y_no_alpha, _, _ = model(features, training=True)
 
-        self.assertAllClose(y_with_alpha, y_no_alpha)
+        np.allclose(y_with_alpha, y_no_alpha)
 
         # in inference mode when alpha > 1.0 the batch stats will be used
 
-        y_with_alpha, _, _ = model(self.x, training=False, alpha=0.5)
-        y_no_alpha, _, _ = model(self.x, training=False)
+        y_with_alpha, _, _ = model(features, training=False, alpha=0.5)
+        y_no_alpha, _, _ = model(features, training=False)
 
-        self.assertNotAllClose(y_with_alpha, y_no_alpha)
+        np.allclose(y_with_alpha, y_no_alpha)
 
-
-if __name__ == "__main__":
-    tf.test.main()
+    #@pytest.skip(msg="Saving takes too much time.")
+    def test_can_infer_with_saved_model(self, model: tf.keras.Model, features, saved_model_path):
+        model.load_weights(saved_model_path)
+        out1, _, _ = model(features, training=False, alpha=0.5)
+        # out2 will all be zeros since bn moving stats are still zeros at that point
+        out2, _, _ = model(features, training=False)
+        assert not np.allclose(out1, out2)
