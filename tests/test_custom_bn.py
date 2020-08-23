@@ -48,4 +48,5 @@ class CustomBatchNormTest(tf.test.TestCase):
         # TODO check moving mean & std
 
 
-tf.test.main()
+if __name__ == "__main__":
+    tf.test.main()

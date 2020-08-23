@@ -46,4 +46,5 @@ class TabNetTest(tf.test.TestCase):
         self.assertNotAllClose(y_with_alpha, y_no_alpha)
 
 
-# tf.test.main()
+if __name__ == "__main__":
+    tf.test.main()
