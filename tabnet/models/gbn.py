@@ -7,7 +7,7 @@ class GhostBatchNormalization(tf.keras.Model):
     ):
         super(GhostBatchNormalization, self).__init__()
         self.virtual_divider = virtual_divider
-        #self.bn = tf.keras.layers.BatchNormalization(momentum=momentum, epsilon=epsilon)
+        # self.bn = tf.keras.layers.BatchNormalization(momentum=momentum, epsilon=epsilon)
         self.bn = BatchNormInferenceWeighting(momentum=momentum)
 
     def call(self, x, training: bool = None, alpha: float = 0.0):
@@ -35,21 +35,29 @@ class BatchNormInferenceWeighting(tf.keras.layers.Layer):
     def build(self, input_shape):
         channels = input_shape[-1]
 
-        self.gamma = tf.Variable(initial_value=tf.ones((channels,), tf.float32), trainable=True,)
-        self.beta = tf.Variable(initial_value=tf.zeros((channels,), tf.float32), trainable=True,)
+        self.gamma = tf.Variable(
+            initial_value=tf.ones((channels,), tf.float32), trainable=True,
+        )
+        self.beta = tf.Variable(
+            initial_value=tf.zeros((channels,), tf.float32), trainable=True,
+        )
 
-        self.moving_mean = tf.Variable(initial_value=tf.zeros((channels,), tf.float32), trainable=False,)
-        self.moving_mean_of_squares = tf.Variable(initial_value=tf.zeros((channels,), tf.float32), trainable=False,)
+        self.moving_mean = tf.Variable(
+            initial_value=tf.zeros((channels,), tf.float32), trainable=False,
+        )
+        self.moving_mean_of_squares = tf.Variable(
+            initial_value=tf.zeros((channels,), tf.float32), trainable=False,
+        )
 
     def __update_moving(self, var, value):
-        var.assign(var * self.momentum + (1-self.momentum) * value)
+        var.assign(var * self.momentum + (1 - self.momentum) * value)
 
     def __apply_normalization(self, x, mean, variance):
         return self.gamma * (x - mean) / tf.sqrt(variance + self.epsilon) + self.beta
 
     def call(self, x, training: bool = None, alpha: float = 0.0):
         mean = tf.reduce_mean(x, axis=0)
-        mean_of_squares = tf.reduce_mean(tf.pow(x,2), axis=0)
+        mean_of_squares = tf.reduce_mean(tf.pow(x, 2), axis=0)
 
         if training:
             # update moving stats
@@ -59,11 +67,10 @@ class BatchNormInferenceWeighting(tf.keras.layers.Layer):
             variance = mean_of_squares - tf.pow(mean, 2)
             x = self.__apply_normalization(x, mean, variance)
         else:
-            mean = alpha * mean + (1-alpha) * self.moving_mean
-            variance = (alpha * mean_of_squares + (1-alpha) * self.moving_mean_of_squares) - tf.pow(mean, 2)
+            mean = alpha * mean + (1 - alpha) * self.moving_mean
+            variance = (
+                alpha * mean_of_squares + (1 - alpha) * self.moving_mean_of_squares
+            ) - tf.pow(mean, 2)
             x = self.__apply_normalization(x, mean, variance)
 
         return x
-
-
-

@@ -13,7 +13,7 @@ class FeatureBlock(tf.keras.Model):
         feature_dim: int,
         apply_glu: bool = True,
         bn_momentum: float = 0.9,
-        bn_virtual_bs: int = 512,
+        bn_virtual_divider: int = 32,
         fc: tf.keras.layers.Layer = None,
         epsilon: float = 1e-5,
     ):
@@ -23,32 +23,30 @@ class FeatureBlock(tf.keras.Model):
         units = feature_dim * 2 if apply_glu else feature_dim
 
         self.fc = tf.keras.layers.Dense(units, use_bias=False) if fc is None else fc
-        # batch norm are not shared
-        # self.bn = tf.keras.layers.BatchNormalization(momentum=bn_momentum, virtual_batch_size=bn_virtual_bs, epsilon=epsilon)
+        self.bn = GhostBatchNormalization(
+            virtual_divider=bn_virtual_divider, momentum=bn_momentum
+        )
 
-        # 16384 / 512 = 32
-        self.bn = GhostBatchNormalization(virtual_divider=32, momentum=bn_momentum)
-
-    def call(self, x, training=None):
+    def call(self, x, training: bool = None, alpha: float = 0.0):
         x = self.fc(x)
-        x = self.bn(x, training=training)
+        x = self.bn(x, training=training, alpha=alpha)
         if self.apply_gpu:
             return glu(x, self.feature_dim)
         return x
 
 
 class AttentiveTransformer(tf.keras.Model):
-    def __init__(self, feature_dim: int, bn_momentum: float, bn_virtual_bs: int):
+    def __init__(self, feature_dim: int, bn_momentum: float, bn_virtual_divider: int):
         super(AttentiveTransformer, self).__init__()
         self.block = FeatureBlock(
             feature_dim,
             bn_momentum=bn_momentum,
-            bn_virtual_bs=bn_virtual_bs,
+            bn_virtual_divider=bn_virtual_divider,
             apply_glu=False,
         )
 
-    def call(self, x, prior_scales, training=None):
-        x = self.block(x, training=training)
+    def call(self, x, prior_scales, training=None, alpha: float = 0.0):
+        x = self.block(x, training=training, alpha=alpha)
         return sparsemax(x * prior_scales)
 
 
@@ -60,7 +58,7 @@ class FeatureTransformer(tf.keras.Model):
         n_total: int = 4,
         n_shared: int = 2,
         bn_momentum: float = 0.9,
-        bn_virtual_bs: int = 512,
+        bn_virtual_divider: int = 1,
     ):
         super(FeatureTransformer, self).__init__()
         self.n_total, self.n_shared = n_total, n_shared
@@ -68,7 +66,7 @@ class FeatureTransformer(tf.keras.Model):
         kargs = {
             "feature_dim": feature_dim,
             "bn_momentum": bn_momentum,
-            "bn_virtual_bs": bn_virtual_bs,
+            "bn_virtual_divider": bn_virtual_divider,
         }
 
         # build blocks
@@ -81,10 +79,12 @@ class FeatureTransformer(tf.keras.Model):
             else:
                 self.blocks.append(FeatureBlock(**kargs))
 
-    def call(self, x: tf.Tensor, training=None) -> tf.Tensor:
-        x = self.blocks[0](x, training=training)
+    def call(
+        self, x: tf.Tensor, training: bool = None, alpha: float = 0.0
+    ) -> tf.Tensor:
+        x = self.blocks[0](x, training=training, alpha=alpha)
         for n in range(1, self.n_total):
-            x = x * tf.sqrt(0.5) + self.blocks[n](x, training=training)
+            x = x * tf.sqrt(0.5) + self.blocks[n](x, training=training, alpha=alpha)
         return x
 
     @property

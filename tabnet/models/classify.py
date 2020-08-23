@@ -40,8 +40,8 @@ class TabNetClassifier(tf.keras.Model):
         self.dp = tf.keras.layers.Dropout(dp) if dp is not None else dp
         self.head = tf.keras.layers.Dense(n_classes, activation=None, use_bias=False)
 
-    def call(self, x, training: bool = None):
-        out, sparse_loss, _ = self.model(x, training=training)
+    def call(self, x, training: bool = None, alpha: float = 0.0):
+        out, sparse_loss, _ = self.model(x, training=training, alpha=alpha)
         if self.dp is not None:
             out = self.dp(out, training=training)
         y = self.head(out, training=training)

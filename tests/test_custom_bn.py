@@ -5,9 +5,8 @@ from tabnet.models.gbn import BatchNormInferenceWeighting
 
 
 class CustomBatchNormTest(tf.test.TestCase):
-
     def setUp(self):
-        self.x = tf.random.uniform(shape=(32,54), dtype=tf.float32)
+        self.x = tf.random.uniform(shape=(32, 54), dtype=tf.float32)
         self.zeros = tf.zeros(self.x.shape[1])
         self.ones = tf.ones(self.x.shape[1])
 
@@ -16,7 +15,10 @@ class CustomBatchNormTest(tf.test.TestCase):
         x_bn = bn(self.x, training=True)
 
         mean = tf.reduce_mean(x_bn, axis=0)
-        std = tf.sqrt(tf.reduce_mean(tf.pow(x_bn, 2), axis=0) - tf.pow(tf.reduce_mean(x_bn, axis=0), 2))
+        std = tf.sqrt(
+            tf.reduce_mean(tf.pow(x_bn, 2), axis=0)
+            - tf.pow(tf.reduce_mean(x_bn, axis=0), 2)
+        )
 
         self.assertAllClose(mean, self.zeros)
         self.assertAllClose(std, self.ones)
@@ -35,12 +37,15 @@ class CustomBatchNormTest(tf.test.TestCase):
 
     def test_similar_to_keras(self):
         bn = BatchNormInferenceWeighting(momentum=0.9)
-        bn_keras = tf.keras.layers.BatchNormalization(momentum=0.9, epsilon=tf.keras.backend.epsilon())
+        bn_keras = tf.keras.layers.BatchNormalization(
+            momentum=0.9, epsilon=tf.keras.backend.epsilon()
+        )
 
         x_bn = bn(self.x, training=True)
         x_bn_keras = bn_keras(self.x, training=True)
 
         self.assertAllClose(x_bn, x_bn_keras)
-        #TODO check moving mean & std
+        # TODO check moving mean & std
+
 
 tf.test.main()

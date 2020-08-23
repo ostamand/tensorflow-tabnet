@@ -48,6 +48,7 @@ class TabNet(tf.keras.Model):
         if feature_columns is not None:
             self.input_features = tf.keras.layers.DenseFeatures(feature_columns)
 
+        # ? Switch to Ghost Batch Normalization
         self.bn = tf.keras.layers.BatchNormalization(
             momentum=bn_momentum, epsilon=bn_epsilon
         )
@@ -74,7 +75,7 @@ class TabNet(tf.keras.Model):
             )
 
     def call(
-        self, features: tf.Tensor, training: bool = None
+        self, features: tf.Tensor, training: bool = None, alpha: float = 0.0
     ) -> Tuple[tf.Tensor, tf.Tensor]:
         if self.feature_columns is not None:
             features = self.input_features(features)
@@ -90,7 +91,9 @@ class TabNet(tf.keras.Model):
         total_entropy = 0.0
 
         for step_i in range(self.n_step + 1):
-            x = self.feature_transforms[step_i](masked_features, training=training)
+            x = self.feature_transforms[step_i](
+                masked_features, training=training, alpha=alpha
+            )
 
             if step_i > 0:
                 out = tf.keras.activations.relu(x[:, : self.output_dim])
@@ -101,7 +104,7 @@ class TabNet(tf.keras.Model):
                 x_for_mask = x[:, self.output_dim :]
 
                 mask_values = self.attentive_transforms[step_i](
-                    x_for_mask, prior_scales, training=training
+                    x_for_mask, prior_scales, training=training, alpha=alpha
                 )
 
                 # relaxation factor of 1 forces the feature to be only used once.
