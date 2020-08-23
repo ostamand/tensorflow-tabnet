@@ -32,5 +32,5 @@ def get_dataset(
     ds = ds.batch(batch_size, drop_remainder=drop_remainder)
     if take is not None:
         ds = ds.take(take)
-    ds = ds.repeat()  # .prefetch(tf.data.experimental.AUTOTUNE)
+    ds = ds.repeat().prefetch(tf.data.experimental.AUTOTUNE)
     return ds
