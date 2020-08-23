@@ -12,6 +12,7 @@ from tabnet.models.classify import TabNetClassifier
 from tabnet.datasets.covertype import get_dataset, get_data
 from tabnet.callbacks.tensorboard import TensorBoardWithLR
 from tabnet.schedules import DecayWithWarmupSchedule
+from tabnet.utils import set_seed
 
 LOGDIR = ".logs"
 OUTDIR = ".outs/test"
@@ -35,6 +36,7 @@ CONFIGS = {
     "clipnorm": 2.0,
     "patience": 200,
     "dp": 0.2,
+    "seed": 42,
 }
 
 
@@ -53,13 +55,17 @@ def train(
     cleanup: bool,
     warmup: int,
 ):
+    set_seed(CONFIGS["seed"])
+
     out_dir = os.path.join(out_dir, run_name)
     if cleanup and os.path.exists(out_dir):
         shutil.rmtree(out_dir)
 
     df_tr, df_val, df_test = get_data(data_path)
 
-    ds_tr = get_dataset(df_tr, shuffle=True, batch_size=CONFIGS["batch_size"])
+    ds_tr = get_dataset(
+        df_tr, shuffle=True, batch_size=CONFIGS["batch_size"], seed=CONFIGS["seed"]
+    )
     ds_val = get_dataset(
         df_val, shuffle=False, batch_size=CONFIGS["batch_size"], drop_remainder=False
     )
@@ -86,11 +92,7 @@ def train(
 
     if warmup:
         lr = DecayWithWarmupSchedule(
-            learning_rate,
-            CONFIGS["min_learning_rate"],
-            warmup,
-            decay_rate,
-            decay_steps
+            learning_rate, CONFIGS["min_learning_rate"], warmup, decay_rate, decay_steps
         )
     else:
         lr = tf.keras.optimizers.schedules.ExponentialDecay(
