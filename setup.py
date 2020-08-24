@@ -3,7 +3,8 @@ from setuptools import setup, find_packages
 REQUIREMENTS = [
     "tensorflow>=2.0.0",
     "tensorflow-addons>=0.11.1",
-    "pandas>=1.1.0"
+    "pandas>=1.1.0",
+    "scikit-learn>=0.23.2"
 ]
 
 setup(

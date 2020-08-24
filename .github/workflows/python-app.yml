@@ -25,7 +25,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install black pytest wheel
         pip install .
-        pip list
     - name: Lint with black
       run: |
         black .
