@@ -6,12 +6,7 @@ import shutil
 from tabnet.models import TabNetClassifier
 
 
-CONFIGS = {
-    "num_features": 20,
-    "feature_dim": 32,
-    "output_dim": 64,
-    "n_classes": 10
-}
+CONFIGS = {"num_features": 20, "feature_dim": 32, "output_dim": 64, "n_classes": 10}
 
 
 OUTPUT_FOLDER = ".tmp"
@@ -23,9 +18,11 @@ def model():
     net.build((None, CONFIGS["num_features"]))
     return net
 
+
 @pytest.fixture()
 def features():
-    return tf.random.uniform((32, CONFIGS["num_features"]))*2
+    return tf.random.uniform((32, CONFIGS["num_features"])) * 2
+
 
 @pytest.fixture()
 def output_folder():
@@ -33,8 +30,7 @@ def output_folder():
     shutil.rmtree(OUTPUT_FOLDER)
 
 
-class TestClassify():
-
+class TestClassify:
     def test_can_save_model(self, model, output_folder, features):
         # save to folder
         model.save_to_directory(output_folder)
@@ -47,5 +43,7 @@ class TestClassify():
         for k, v in model_loaded.configs.items():
             assert model.configs[k] == v
 
-        assert np.allclose(model_loaded.head.weights[0].numpy(), model.head.weights[0].numpy())
+        assert np.allclose(
+            model_loaded.head.weights[0].numpy(), model.head.weights[0].numpy()
+        )
         assert np.allclose(out, out_loaded)

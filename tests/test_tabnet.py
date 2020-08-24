@@ -35,8 +35,7 @@ def saved_model_path(model: tf.keras.Model):
     shutil.rmtree(TMP_DIR)
 
 
-class TestTabNet():
-
+class TestTabNet:
     def test_feature_transformer_block(self, features):
         block = FeatureBlock(FEATURE_DIM, apply_glu=True, bn_virtual_divider=1)
         x = block(features, training=False)
@@ -61,8 +60,10 @@ class TestTabNet():
 
         np.allclose(y_with_alpha, y_no_alpha)
 
-    #@pytest.skip(msg="Saving takes too much time.")
-    def test_can_infer_with_saved_model(self, model: tf.keras.Model, features, saved_model_path):
+    # @pytest.skip(msg="Saving takes too much time.")
+    def test_can_infer_with_saved_model(
+        self, model: tf.keras.Model, features, saved_model_path
+    ):
         model.load_weights(saved_model_path)
         out1, _, _ = model(features, training=False, alpha=0.5)
         # out2 will all be zeros since bn moving stats are still zeros at that point
