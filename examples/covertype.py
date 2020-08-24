@@ -14,7 +14,9 @@ from tabnet.callbacks.tensorboard import TensorBoardWithLR
 from tabnet.schedules import DecayWithWarmupSchedule
 from tabnet.utils import set_seed
 
-LOGDIR = ".logs"
+
+TMPDIR = ".tmp"
+LOGDIR = ".logs2"
 OUTDIR = ".outs/test"
 DATA_PATH = "data/covtype.csv"
 CONFIGS = {
@@ -40,6 +42,12 @@ CONFIGS = {
 }
 
 
+def clean_tmp_dir():
+    if os.path.exists(TMPDIR):
+        shutil.rmtree(TMPDIR)
+    os.makedirs(TMPDIR)
+
+
 def train(
     run_name: Text,
     data_path: Text,
@@ -54,8 +62,10 @@ def train(
     epochs: int,
     cleanup: bool,
     warmup: int,
+    seed: int,
 ):
-    set_seed(CONFIGS["seed"])
+    set_seed(seed)
+    clean_tmp_dir()
 
     out_dir = os.path.join(out_dir, run_name)
     if cleanup and os.path.exists(out_dir):
@@ -64,7 +74,7 @@ def train(
     df_tr, df_val, df_test = get_data(data_path)
 
     ds_tr = get_dataset(
-        df_tr, shuffle=True, batch_size=CONFIGS["batch_size"], seed=CONFIGS["seed"]
+        df_tr, shuffle=True, batch_size=CONFIGS["batch_size"], seed=seed
     )
     ds_val = get_dataset(
         df_val, shuffle=False, batch_size=CONFIGS["batch_size"], drop_remainder=False
@@ -127,7 +137,7 @@ def train(
     if os.path.exists(log_dir):
         shutil.rmtree(log_dir)
 
-    checkpoint_path = os.path.join(out_dir, "checkpoint")
+    checkpoint_path = os.path.join(TMPDIR, "checkpoint")
 
     callbacks = [
         TensorBoardWithLR(log_dir=log_dir, write_graph=True, profile_batch=0),
@@ -152,12 +162,12 @@ def train(
     )
 
     model.load_weights(checkpoint_path)
+    model.save_to_directory(out_dir)
 
     # evaluate
 
     metrics = model.evaluate(ds_test, steps=num_test_steps, return_dict=True)
-    if not os.path.exists(out_dir):
-        os.makedirs(out_dir)
+
     with open(os.path.join(out_dir, "test_results.json"), "w") as f:
         json.dump(metrics, f)
 
@@ -176,6 +186,7 @@ if __name__ == "__main__":
     parser.add_argument("--decay_rate", default=CONFIGS["decay_rate"], type=float)
     parser.add_argument("--decay_steps", default=CONFIGS["decay_steps"], type=int)
     parser.add_argument("--learning_rate", default=CONFIGS["learning_rate"], type=int)
+    parser.add_argument("--seed", default=CONFIGS["seed"], type=int)
     parser.add_argument(
         "--sparsity_coefficient", default=CONFIGS["sparsity_coefficient"], type=float
     )
@@ -202,4 +213,5 @@ if __name__ == "__main__":
         args.epochs,
         args.cleanup,
         args.warmup,
+        args.seed,
     )
