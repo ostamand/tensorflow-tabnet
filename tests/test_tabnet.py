@@ -10,7 +10,7 @@ from tabnet.models.transformers import FeatureBlock
 from tabnet.datasets.covertype import get_data, get_dataset
 
 
-COVTYPE_CSV_PATH = "data/covtype.csv"
+COVTYPE_CSV_PATH = "data/test/covtype_sample.csv"
 FEATURE_DIM = 50
 TMP_DIR = ".tmp"
 
@@ -68,4 +68,4 @@ class TestTabNet:
         out1, _, _ = model(features, training=False, alpha=0.5)
         # out2 will all be zeros since bn moving stats are still zeros at that point
         out2, _, _ = model(features, training=False)
-        assert not np.allclose(out1, out2)
+        assert not np.allclose(out1.numpy(), out2.numpy())

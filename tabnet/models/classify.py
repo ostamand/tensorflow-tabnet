@@ -41,9 +41,9 @@ class TabNetClassifier(tf.keras.Model):
             "bn_epsilon": bn_epsilon,
             "bn_momentum": bn_momentum,
             "bn_virtual_divider": bn_virtual_divider,
-            "dp": dp
+            "dp": dp,
         }
-        for k,v in kwargs.items():
+        for k, v in kwargs.items():
             self.configs[k] = v
 
         self.sparsity_coefficient = sparsity_coefficient
@@ -90,5 +90,3 @@ class TabNetClassifier(tf.keras.Model):
         load_status = model.load_weights(os.path.join(path_to_folder, "ckpt"))
         load_status.assert_consumed()
         return model
-
-

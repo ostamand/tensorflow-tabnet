@@ -4,7 +4,7 @@ import tensorflow as tf
 from tabnet.datasets.covertype import get_data, get_dataset
 
 
-COVTYPE_CSV_PATH = "data/covtype.csv"
+COVTYPE_CSV_PATH = "data/test/covtype_sample.csv"
 SEED = 42
 
 
@@ -34,10 +34,10 @@ class TestDataset(tf.test.TestCase):
     def test_dataset_is_deterministic(self):
         df_tr, _, _ = get_data(COVTYPE_CSV_PATH, seed=SEED)
 
-        ds_tr = get_dataset(df_tr, shuffle=True, batch_size=64, seed=SEED, take=10)
+        ds_tr = get_dataset(df_tr, shuffle=True, batch_size=32, seed=SEED, take=2)
         labels1 = self.__get_labels(ds_tr, 20)
 
-        ds_tr = get_dataset(df_tr, shuffle=True, batch_size=64, seed=SEED, take=10)
+        ds_tr = get_dataset(df_tr, shuffle=True, batch_size=32, seed=SEED, take=2)
         labels2 = self.__get_labels(ds_tr, 20)
 
         self.assertAllClose(labels1, labels2)

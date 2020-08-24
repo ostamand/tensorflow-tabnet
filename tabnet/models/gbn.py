@@ -7,7 +7,6 @@ class GhostBatchNormalization(tf.keras.Model):
     ):
         super(GhostBatchNormalization, self).__init__()
         self.virtual_divider = virtual_divider
-        # self.bn = tf.keras.layers.BatchNormalization(momentum=momentum, epsilon=epsilon)
         self.bn = BatchNormInferenceWeighting(momentum=momentum)
 
     def call(self, x, training: bool = None, alpha: float = 0.0):

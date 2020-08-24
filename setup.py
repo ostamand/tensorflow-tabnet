@@ -1,9 +1,6 @@
 from setuptools import setup
 
-REQUIREMENTS = [
-    "tensorflow>=2.0.0",
-    "tensorflow-addons>=0.11.1"
-]
+REQUIREMENTS = ["tensorflow>=2.0.0", "tensorflow-addons>=0.11.1"]
 
 setup(
     name="tabnet",
@@ -14,5 +11,5 @@ setup(
     license="MIT",
     packages=["tabnet"],
     python_requires=">=3.5.0",
-    install_requires=REQUIREMENTS
+    install_requires=REQUIREMENTS,
 )
