@@ -44,7 +44,7 @@ class TestCustomBatchNorm(tf.test.TestCase):
         x_bn = bn(self.x, training=True)
         x_bn_keras = bn_keras(self.x, training=True)
 
-        self.assertAllClose(x_bn, x_bn_keras)
+        self.assertAllClose(x_bn, x_bn_keras, rtol=1e-4, atol=1e-4)
         # TODO check moving mean & std
 
 
