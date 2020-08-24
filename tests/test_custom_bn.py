@@ -4,7 +4,7 @@ import tensorflow as tf
 from tabnet.models.gbn import BatchNormInferenceWeighting
 
 
-class CustomBatchNormTest(tf.test.TestCase):
+class TestCustomBatchNorm(tf.test.TestCase):
     def setUp(self):
         self.x = tf.random.uniform(shape=(32, 54), dtype=tf.float32)
         self.zeros = tf.zeros(self.x.shape[1])

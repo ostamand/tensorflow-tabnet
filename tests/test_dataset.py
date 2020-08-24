@@ -8,7 +8,7 @@ COVTYPE_CSV_PATH = "data/covtype.csv"
 SEED = 42
 
 
-class DatasetTest(tf.test.TestCase):
+class TestDataset(tf.test.TestCase):
     def test_gets_always_the_same_data(self):
         df_tr, df_val, df_test = get_data(COVTYPE_CSV_PATH, seed=SEED)
         df2_tr, df2_val, df2_test = get_data(COVTYPE_CSV_PATH, seed=SEED)
