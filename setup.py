@@ -1,6 +1,10 @@
 from setuptools import setup, find_packages
 
-REQUIREMENTS = ["tensorflow>=2.0.0", "tensorflow-addons>=0.11.1"]
+REQUIREMENTS = [
+    "tensorflow>=2.0.0",
+    "tensorflow-addons>=0.11.1",
+    "pandas>=1.1.0"
+]
 
 setup(
     name="tabnet",
