@@ -88,5 +88,5 @@ class TabNetClassifier(tf.keras.Model):
         model: tf.keras.Model = cls(**configs)
         model.build((None, configs["num_features"]))
         load_status = model.load_weights(os.path.join(path_to_folder, "ckpt"))
-        load_status.assert_consumed()
+        load_status.expect_partial()
         return model
