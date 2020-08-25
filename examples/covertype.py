@@ -16,8 +16,8 @@ from tabnet.utils import set_seed
 
 
 TMPDIR = ".tmp"
-LOGDIR = ".logs2"
-OUTDIR = ".outs/test"
+LOGDIR = ".logs"
+OUTDIR = ".outs"
 DATA_PATH = "data/covtype.csv"
 CONFIGS = {
     "feature_dim": 64,
@@ -36,7 +36,6 @@ CONFIGS = {
     "decay_rate": 0.95,
     "total_steps": 130000,
     "clipnorm": 2.0,
-    "patience": 200,
     "dp": 0.2,
     "seed": 42,
 }
@@ -62,6 +61,7 @@ def train(
     epochs: int,
     cleanup: bool,
     warmup: int,
+    dp: float,
     seed: int,
 ):
     set_seed(seed)
@@ -97,8 +97,11 @@ def train(
         sparsity_coefficient=sparsity_coefficient,
         bn_momentum=bn_momentum,
         bn_virtual_divider=int(CONFIGS["batch_size"] / CONFIGS["bn_virtual_bs"]),
-        dp=CONFIGS["dp"],
+        dp=dp if dp > 0 else None,
     )
+
+    model.build((None, CONFIGS["num_features"]))
+    model.summary()
 
     if warmup:
         lr = DecayWithWarmupSchedule(
@@ -174,7 +177,7 @@ def train(
     print(metrics)
 
 
-# example: python examples/covertype.py --run_name new-bn --epochs 1000 --warmup 100
+# example: python examples/covertype.py --run_name w100_dp0 --epochs 2000 --warmup 100 --dp 0.0
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("TabNet Covertype Training")
     parser.add_argument("--run_name", default=None, type=str)
@@ -186,6 +189,7 @@ if __name__ == "__main__":
     parser.add_argument("--decay_rate", default=CONFIGS["decay_rate"], type=float)
     parser.add_argument("--decay_steps", default=CONFIGS["decay_steps"], type=int)
     parser.add_argument("--learning_rate", default=CONFIGS["learning_rate"], type=int)
+    parser.add_argument("--dp", default=CONFIGS["dp"], type=float)
     parser.add_argument("--seed", default=CONFIGS["seed"], type=int)
     parser.add_argument(
         "--sparsity_coefficient", default=CONFIGS["sparsity_coefficient"], type=float
@@ -213,5 +217,6 @@ if __name__ == "__main__":
         args.epochs,
         args.cleanup,
         args.warmup,
+        args.dp,
         args.seed,
     )
