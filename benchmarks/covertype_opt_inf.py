@@ -12,12 +12,14 @@ from tabnet.models.classify import TabNetClassifier
 DATA_PATH = "data/covtype.csv"
 
 
-def optimize_alpha_on_dataset(model: tf.keras.Model, ds: tf.data.Dataset, size_of_dataset: int):
+def optimize_alpha_on_dataset(
+    model: tf.keras.Model, ds: tf.data.Dataset, size_of_dataset: int
+):
     sample, _ = next(iter(ds))
     bs = sample.shape[0]
     num_steps = int(np.ceil(size_of_dataset / bs))
 
-    alphas = [1/(2*bs) * i for i in range(50)]
+    alphas = [1 / (2 * bs) * i for i in range(50)]
 
     accuracies = []
     for alpha in alphas:
@@ -50,10 +52,12 @@ def main(model_dir: Text, data_path: Text, batch_size: int, seed: int):
 
     print(f"Accuracy: {np.min(accuracies)} (min) {np.max(accuracies)} (max)")
     print(f"Alphas: {np.min(alphas)} (min) {np.max(alphas)} (max)")
-    print(f"Alpha at Accuracy: {alphas[np.argmin(accuracies)]} (min) {alphas[np.argmax(accuracies)]} (max)")
+    print(
+        f"Alpha at Accuracy: {alphas[np.argmin(accuracies)]} (min) {alphas[np.argmax(accuracies)]} (max)"
+    )
 
 
-# python examples/covertype_opt_inf.py --model_dir .outs/test/w200
+# python benchmarks/covertype_opt_inf.py --model_dir .outs/test/w200
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_dir", type=str)
@@ -62,9 +66,4 @@ if __name__ == "__main__":
     parser.add_argument("--seed", default=42, type=int)
     args = parser.parse_args()
 
-    main(
-        args.model_dir,
-        args.data_path,
-        args.batch_size,
-        args.seed
-    )
+    main(args.model_dir, args.data_path, args.batch_size, args.seed)

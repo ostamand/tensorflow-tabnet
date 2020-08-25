@@ -177,7 +177,7 @@ def train(
     print(metrics)
 
 
-# example: python examples/covertype.py --run_name w100_dp0 --epochs 2000 --warmup 100 --dp 0.0
+# example: python benchmarks/covertype.py --run_name w100_dp0 --epochs 2000 --warmup 100 --dp 0.0
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("TabNet Covertype Training")
     parser.add_argument("--run_name", default=None, type=str)
