@@ -1,6 +1,8 @@
 import argparse
 from typing import Text, List
 import pickle
+import shutil
+import os
 
 import tensorflow as tf
 import tensorflow_datasets as tfds
@@ -38,7 +40,6 @@ def build_model(hp):
         bn_momentum=hp.Choice("bn_momentum", values=[0.6, 0.7, 0.9], default=0.7),
         bn_virtual_divider=1 # let's not use Ghost Batch Normalization. batch sizes are too small
     )
-
     lr = DecayWithWarmupSchedule(
         hp.Choice(
             "learning_rate", values=[0.001, 0.005, 0.01, 0.02], default=0.02
@@ -88,9 +89,14 @@ def search(
     batch_size: int,
     n_trials: int,
     execution_per_trial: int,
-    project: Text
+    project: Text,
+    do_cleanup: bool,
 ):
     set_seed(SEED)
+
+    dir_to_clean = os.path.join(SEARCH_DIR, project)
+    if do_cleanup and os.path.exists(dir_to_clean):
+        shutil.rmtree(dir_to_clean)
 
     # first 80% for train. remaining 20% for val & test dataset for final eval.
     ds_tr, ds_val, ds_test = tfds.load(
@@ -138,7 +144,7 @@ def search(
         pickle.dump(output, f)
 
 
-# python3 examples/train_mnist.py --trials 2 --epochs 20 --bs 64
+# python3 examples/train_mnist.py --trials 2 --epochs 10 --bs 128
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--trials", default=1, type=int)
@@ -146,6 +152,7 @@ if __name__ == "__main__":
     parser.add_argument("--bs", default=32, type=int)
     parser.add_argument("--exec_per_trial", default=2, type=int)
     parser.add_argument("--project", default="test", type=str)
+    parser.add_argument("--cleanup", action="store_true")
     args = parser.parse_args()
 
-    search(args.epochs, args.bs, args.trials, args.exec_per_trial, args.project)
+    search(args.epochs, args.bs, args.trials, args.exec_per_trial, args.project, args.cleanup)

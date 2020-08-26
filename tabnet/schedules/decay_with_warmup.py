@@ -16,7 +16,7 @@ class DecayWithWarmupSchedule(LearningRateSchedule):
 
     def __call__(self, step):
         return tf.cond(
-            tf.greater_equal(step, self.warmup),
+            tf.greater(step, self.warmup),
             lambda: self.learning_rate
             * tf.pow(self.decay_rate, (step / self.decay_steps)),
             lambda: self.m * step + self.b,
