@@ -15,11 +15,7 @@ from tabnet.schedules import DecayWithWarmupSchedule
 
 SEARCH_DIR = ".search"
 SEED = 42
-DEFAULTS = {
-    "num_features": 784,  # 28x28
-    "n_classes": 10,
-    "min_learning_rate": 1e-6
-}
+DEFAULTS = {"num_features": 784, "n_classes": 10, "min_learning_rate": 1e-6}  # 28x28
 
 
 # because doing a training on MNIST is something I MUST do, no?
@@ -33,21 +29,21 @@ def build_model(hp):
         output_dim=hp.Choice("output_dim", values=[16, 32, 64], default=32),
         n_classes=DEFAULTS["n_classes"],
         n_step=hp.Choice("n_step", values=[2, 4, 5, 6], default=4),
-        relaxation_factor=hp.Choice("relaxation_factor", values=[1.0, 1.25, 1.5, 2.0], default=1.5),
+        relaxation_factor=hp.Choice(
+            "relaxation_factor", values=[1.0, 1.25, 1.5, 2.0], default=1.5
+        ),
         sparsity_coefficient=hp.Choice(
             "sparsity_coefficient", values=[0.0001, 0.001, 0.01], default=0.0001
         ),
         bn_momentum=hp.Choice("bn_momentum", values=[0.6, 0.7, 0.9], default=0.7),
-        bn_virtual_divider=1 # let's not use Ghost Batch Normalization. batch sizes are too small
+        bn_virtual_divider=1,  # let's not use Ghost Batch Normalization. batch sizes are too small
     )
     lr = DecayWithWarmupSchedule(
-        hp.Choice(
-            "learning_rate", values=[0.001, 0.005, 0.01, 0.02], default=0.02
-        ),
+        hp.Choice("learning_rate", values=[0.001, 0.005, 0.01, 0.02], default=0.02),
         DEFAULTS["min_learning_rate"],
         hp.Choice("warmup", values=[1, 5, 10, 20], default=5),
         hp.Choice("decay_rate", values=[0.90, 0.95, 0.99], default=0.95),
-        hp.Choice("decay_steps", values=[10, 100, 500, 1000], default=500)
+        hp.Choice("decay_steps", values=[10, 100, 500, 1000], default=500),
     )
 
     optimizer = tf.keras.optimizers.Adam(
@@ -66,8 +62,13 @@ def build_model(hp):
     return model
 
 
-def prepare_dataset(ds: tf.data.Dataset, batch_size: int, shuffle: bool = False, drop_remainder: bool = False):
-    size_of_dataset = ds.reduce(0, lambda x, _ : x + 1).numpy()
+def prepare_dataset(
+    ds: tf.data.Dataset,
+    batch_size: int,
+    shuffle: bool = False,
+    drop_remainder: bool = False,
+):
+    size_of_dataset = ds.reduce(0, lambda x, _: x + 1).numpy()
     if shuffle:
         ds = ds.shuffle(buffer_size=size_of_dataset, seed=SEED)
     ds: tf.data.Dataset = ds.batch(batch_size, drop_remainder=drop_remainder)
@@ -76,7 +77,7 @@ def prepare_dataset(ds: tf.data.Dataset, batch_size: int, shuffle: bool = False,
     def prepare_data(features):
         image = tf.cast(features["image"], tf.float32)
         bs = tf.shape(image)[0]
-        image = tf.reshape(image / 255., (bs, -1))
+        image = tf.reshape(image / 255.0, (bs, -1))
         return image, features["label"]
 
     autotune = tf.data.experimental.AUTOTUNE
@@ -119,7 +120,7 @@ def search(
         project_name=project,
     )
 
-    #? add callbacks
+    # ? add callbacks
     tuner.search(
         ds_tr, epochs=epochs, validation_data=ds_val,
     )
@@ -135,10 +136,7 @@ def search(
     print(f"Test results: {results}")
     print(f"Best hyperparams: {best_hyperparams}")
 
-    output = {
-        "results": results,
-        "best_hyperparams": best_hyperparams
-    }
+    output = {"results": results, "best_hyperparams": best_hyperparams}
 
     with open("search_results.pickle", "wb") as f:
         pickle.dump(output, f)
@@ -155,4 +153,11 @@ if __name__ == "__main__":
     parser.add_argument("--cleanup", action="store_true")
     args = parser.parse_args()
 
-    search(args.epochs, args.bs, args.trials, args.exec_per_trial, args.project, args.cleanup)
+    search(
+        args.epochs,
+        args.bs,
+        args.trials,
+        args.exec_per_trial,
+        args.project,
+        args.cleanup,
+    )
