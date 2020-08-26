@@ -8,7 +8,7 @@ Classification of forest cover type from carthographic variables.
 
 To run the training:
 
-```python
+```bash
 python3 benchmarks/covertype.py
 ```
 
@@ -39,7 +39,7 @@ Here is a summary of the changes with respect to the paper implementation
 
 To optimize the inference weighting `alpha` on the validation dataset use:
 
-```python
+```bash
 python3 benchmarks/covertype_opt_inf.py --model_dir .outs/w200
 ```
 
