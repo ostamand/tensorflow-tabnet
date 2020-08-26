@@ -125,19 +125,15 @@ def search(
         ds_tr, epochs=epochs, validation_data=ds_val,
     )
 
-    tuner.results_summary(num_trials=1)
     best_model: tf.keras.Model = tuner.get_best_models(num_models=1)[0]
     best_model.build((None, DEFAULTS["num_features"]))
-
     results = best_model.evaluate(ds_test, return_dict=True)
 
+    tuner.results_summary(num_trials=1)
     best_hyperparams = tuner.get_best_hyperparameters(num_trials=1)
-
     print(f"Test results: {results}")
-    print(f"Best hyperparams: {best_hyperparams}")
 
     output = {"results": results, "best_hyperparams": best_hyperparams}
-
     with open("search_results.pickle", "wb") as f:
         pickle.dump(output, f)
 
