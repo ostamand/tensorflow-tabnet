@@ -1,5 +1,7 @@
 tensorflow==2.3.0
 tensorflow-addons==0.11.1
+tensorflow-datasets==3.2.1
+keras-tuner==1.0.1
 black
 ipykernel
 pandas
