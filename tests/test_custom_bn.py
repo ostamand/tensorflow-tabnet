@@ -20,7 +20,7 @@ class TestCustomBatchNorm(tf.test.TestCase):
             - tf.pow(tf.reduce_mean(x_bn, axis=0), 2)
         )
 
-        self.assertAllClose(mean, self.zeros)
+        self.assertAllClose(mean, self.zeros, rtol = 1e-04, atol = 1e-04)
         self.assertAllClose(std, self.ones)
 
     def test_update_moving_stats_only_in_training(self):
