@@ -12,7 +12,13 @@ from tabnet.models.classify import TabNetClassifier
 DATA_PATH = "data/covtype.csv"
 
 
-def get_accuracy(model: tf.keras.Model, ds: tf.data.Dataset, alpha: float, num_steps: int, size_of_dataset: int):
+def get_accuracy(
+    model: tf.keras.Model,
+    ds: tf.data.Dataset,
+    alpha: float,
+    num_steps: int,
+    size_of_dataset: int,
+):
     accuracy = 0
     ds_iter = iter(ds)
     for _ in range(num_steps):
@@ -35,9 +41,7 @@ def optimize_alpha_on_dataset(
 
     accuracies = []
     for alpha in alphas:
-        accuracies.append(
-            get_accuracy(model, ds, alpha, num_steps, size_of_dataset)
-        )
+        accuracies.append(get_accuracy(model, ds, alpha, num_steps, size_of_dataset))
     return alphas, accuracies
 
 
@@ -62,8 +66,10 @@ def main(model_dir: Text, data_path: Text, batch_size: int, seed: int):
     # check on test dataset
     size_of_dataset = len(df_test)
     num_steps = int(np.ceil(size_of_dataset / batch_size))
-    test_accuracy_opt = get_accuracy(model, ds_test, best_alpha, num_steps, len(df_test))
-    test_accuracy_orig = get_accuracy(model, ds_test, 0., num_steps, len(df_test))
+    test_accuracy_opt = get_accuracy(
+        model, ds_test, best_alpha, num_steps, len(df_test)
+    )
+    test_accuracy_orig = get_accuracy(model, ds_test, 0.0, num_steps, len(df_test))
 
     print(accuracies)
 
