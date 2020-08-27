@@ -48,20 +48,11 @@ def clean_tmp_dir():
 
 
 def run_lrfinder(
-    ds: tf.data.Dataset,
-    model: tf.keras.Model,
-    optimizer,
-    lossf,
-    steps_per_epoch: int,
+    ds: tf.data.Dataset, model: tf.keras.Model, optimizer, lossf, steps_per_epoch: int,
 ) -> None:
     lrfinder = LRFinder(num_steps=steps_per_epoch, max_lr=1)
 
-    _ = model.fit(
-        ds,
-        epochs=1,
-        steps_per_epoch=steps_per_epoch,
-        callbacks=[lrfinder],
-    )
+    _ = model.fit(ds, epochs=1, steps_per_epoch=steps_per_epoch, callbacks=[lrfinder],)
 
 
 def train(
