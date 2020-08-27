@@ -10,7 +10,7 @@ import numpy as np
 
 from tabnet.models.classify import TabNetClassifier
 from tabnet.datasets.covertype import get_dataset, get_data
-from tabnet.callbacks.tensorboard import TensorBoardWithLR
+from tabnet.callbacks import TensorBoardWithLR, LRFinder
 from tabnet.schedules import DecayWithWarmupSchedule
 from tabnet.utils import set_seed
 
@@ -47,6 +47,23 @@ def clean_tmp_dir():
     os.makedirs(TMPDIR)
 
 
+def run_lrfinder(
+    ds: tf.data.Dataset,
+    model: tf.keras.Model,
+    optimizer,
+    lossf,
+    steps_per_epoch: int,
+) -> None:
+    lrfinder = LRFinder(num_steps=steps_per_epoch, max_lr=1)
+
+    _ = model.fit(
+        ds,
+        epochs=1,
+        steps_per_epoch=steps_per_epoch,
+        callbacks=[lrfinder],
+    )
+
+
 def train(
     run_name: Text,
     data_path: Text,
@@ -63,13 +80,15 @@ def train(
     warmup: int,
     dp: float,
     seed: int,
+    do_lr_finder: bool,
 ):
     set_seed(seed)
     clean_tmp_dir()
 
-    out_dir = os.path.join(out_dir, run_name)
-    if cleanup and os.path.exists(out_dir):
-        shutil.rmtree(out_dir)
+    if cleanup:
+        out_dir = os.path.join(out_dir, run_name)
+        if os.path.exists(out_dir):
+            shutil.rmtree(out_dir)
 
     df_tr, df_val, df_test = get_data(data_path)
 
@@ -107,6 +126,8 @@ def train(
         lr = DecayWithWarmupSchedule(
             learning_rate, CONFIGS["min_learning_rate"], warmup, decay_rate, decay_steps
         )
+    elif do_lr_finder:
+        lr = learning_rate
     else:
         lr = tf.keras.optimizers.schedules.ExponentialDecay(
             learning_rate,
@@ -124,6 +145,10 @@ def train(
         loss=lossf,
         metrics=[tf.keras.metrics.SparseCategoricalAccuracy(name="accuracy")],
     )
+
+    if do_lr_finder:
+        run_lrfinder(ds_tr, model, optimizer, lossf, num_train_steps)
+        return
 
     epochs = (
         int(np.ceil(CONFIGS["total_steps"] / num_train_steps))
@@ -177,7 +202,7 @@ def train(
     print(metrics)
 
 
-# example: python benchmarks/covertype.py --run_name w100_dp0 --epochs 2000 --warmup 100 --dp 0.0
+# example: python benchmarks/covertype.py --run_name w200_dp0.4 --epochs 1500 --warmup 200 --dp 0.4
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("TabNet Covertype Training")
     parser.add_argument("--run_name", default=None, type=str)
@@ -201,6 +226,9 @@ if __name__ == "__main__":
         help="Cleanup the output folder before starting the training.",
     )
     parser.add_argument("--warmup", default=None, type=int)
+    parser.add_argument(
+        "--do_lr_finder", action="store_true", help="Runs only the LR finder only"
+    )
     args = parser.parse_args()
 
     train(
@@ -219,4 +247,5 @@ if __name__ == "__main__":
         args.warmup,
         args.dp,
         args.seed,
+        args.do_lr_finder,
     )

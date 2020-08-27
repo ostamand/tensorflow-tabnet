@@ -7,14 +7,13 @@ import matplotlib.pyplot as plt
 
 
 class LRFinder(tf.keras.callbacks.Callback):
-
     def __init__(
         self,
         min_lr: float = 1e-6,
         max_lr: float = 1e-2,
         num_steps: int = 100,
         monitor: Text = "loss",
-        figname: Text = "lrfinder.png"
+        figname: Text = "lrfinder.png",
     ):
         super(LRFinder, self).__init__()
         self.monitor = monitor
@@ -25,8 +24,8 @@ class LRFinder(tf.keras.callbacks.Callback):
         # log(y) = m * log(x) + b
         # m = log(y2/y1) / log(x2/x1)
         # b = log(y2) - m * log(x2)
-        self.m = log10(max_lr / min_lr) / log10(num_steps-1)
-        self.b = log10(max_lr) - self.m * log10(num_steps-1)
+        self.m = log10(max_lr / min_lr) / log10(num_steps - 1)
+        self.b = log10(max_lr) - self.m * log10(num_steps - 1)
         self.__reset()
 
     def __reset(self):
@@ -47,7 +46,10 @@ class LRFinder(tf.keras.callbacks.Callback):
 
     def on_train_batch_end(self, batch, logs=None):
         it = len(self.losses) + 1
-        self.losses.append(logs[self.monitor])
+
+        if len(self.losses) < self.num_steps:
+            self.losses.append(logs[self.monitor])
+
         if len(self.lrs) < self.num_steps:
             self.lrs.append(self.set_lr(it))
         else:
@@ -58,4 +60,3 @@ class LRFinder(tf.keras.callbacks.Callback):
     def on_train_begin(self, logs=None):
         self.__reset()
         self.lrs.append(self.set_lr(1))
-
