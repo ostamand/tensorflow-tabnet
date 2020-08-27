@@ -30,19 +30,20 @@ def build_model(hp):
         n_classes=DEFAULTS["n_classes"],
         n_step=hp.Choice("n_step", values=[2, 4, 5, 6], default=4),
         relaxation_factor=hp.Choice(
-            "relaxation_factor", values=[1.0, 1.25, 1.5, 2.0], default=1.5
+            "relaxation_factor", values=[1.0, 1.25, 1.5, 2.0, 3.0], default=1.5
         ),
         sparsity_coefficient=hp.Choice(
-            "sparsity_coefficient", values=[0.0001, 0.001, 0.01], default=0.0001
+            "sparsity_coefficient", values=[0.0001, 0.001, 0.01, 0.02, 0.05], default=0.0001
         ),
         bn_momentum=hp.Choice("bn_momentum", values=[0.6, 0.7, 0.9], default=0.7),
         bn_virtual_divider=1,  # let's not use Ghost Batch Normalization. batch sizes are too small
+        dp=hp.Choice("dp", values=[0.0, 0.1, 0.2, 0.3, 0.4], default=0.0)
     )
     lr = DecayWithWarmupSchedule(
-        hp.Choice("learning_rate", values=[0.001, 0.005, 0.01, 0.02], default=0.02),
+        hp.Choice("learning_rate", values=[0.001, 0.005, 0.01, 0.02, 0.05], default=0.02),
         DEFAULTS["min_learning_rate"],
         hp.Choice("warmup", values=[1, 5, 10, 20], default=5),
-        hp.Choice("decay_rate", values=[0.90, 0.95, 0.99], default=0.95),
+        hp.Choice("decay_rate", values=[0.8, 0.90, 0.95, 0.99], default=0.95),
         hp.Choice("decay_steps", values=[10, 100, 500, 1000], default=500),
     )
 
