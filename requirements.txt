@@ -8,3 +8,4 @@ pandas
 numpy
 scikit-learn==0.23.2
 pytest
+matplotlib==3.3.1

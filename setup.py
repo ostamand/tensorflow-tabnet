@@ -5,6 +5,7 @@ REQUIREMENTS = [
     "tensorflow-addons>=0.11.1",
     "pandas>=1.1.0",
     "scikit-learn>=0.23.2",
+    "matplotlib>=3.3.1"
 ]
 
 setup(

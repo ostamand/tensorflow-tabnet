@@ -21,7 +21,7 @@ class TestCustomBatchNorm(tf.test.TestCase):
         )
 
         self.assertAllClose(mean, self.zeros, rtol=1e-04, atol=1e-04)
-        self.assertAllClose(std, self.ones)
+        self.assertAllClose(std, self.ones, rtol=1e-04, atol=1e-04)
 
     def test_update_moving_stats_only_in_training(self):
         bn = BatchNormInferenceWeighting()
