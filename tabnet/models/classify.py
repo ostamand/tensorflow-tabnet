@@ -23,6 +23,7 @@ class TabNetClassifier(tf.keras.Model):
         bn_momentum: float = 0.7,
         bn_virtual_divider: int = 32,
         dp: float = None,
+        output_activation: str = None,
         **kwargs
     ):
         super(TabNetClassifier, self).__init__()
@@ -42,6 +43,7 @@ class TabNetClassifier(tf.keras.Model):
             "bn_momentum": bn_momentum,
             "bn_virtual_divider": bn_virtual_divider,
             "dp": dp,
+            "output_activation": output_activation,
         }
         for k, v in kwargs.items():
             self.configs[k] = v
@@ -60,7 +62,7 @@ class TabNetClassifier(tf.keras.Model):
             bn_virtual_divider=bn_virtual_divider,
         )
         self.dp = tf.keras.layers.Dropout(dp) if dp is not None else dp
-        self.head = tf.keras.layers.Dense(n_classes, activation=None, use_bias=False)
+        self.head = tf.keras.layers.Dense(n_classes, activation=output_activation, use_bias=False)
 
     def call(self, x, training: bool = None, alpha: float = 0.0):
         out, sparse_loss, _ = self.model(x, training=training, alpha=alpha)
