@@ -101,10 +101,10 @@ class TabNet(tf.keras.Model):
 
             # no need to build the features mask for the last step
             if step_i < self.n_step:
-                x_for_mask = x[:, self.output_dim :]
+                x_for_mask = x[:, self.output_dim:]
 
                 mask_values = self.attentive_transforms[step_i](
-                    x_for_mask, prior_scales, training=training, alpha=alpha
+                    [x_for_mask, prior_scales], training=training, alpha=alpha
                 )
 
                 # relaxation factor of 1 forces the feature to be only used once.
