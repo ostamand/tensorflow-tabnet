@@ -142,6 +142,8 @@ def search(
     with open("search_results.pickle", "wb") as f:
         pickle.dump(output, f)
 
+    # best_model.save("tabnet_saved_model")
+
 
 # python3 examples/train_mnist.py --trials 2 --epochs 10 --bs 128
 if __name__ == "__main__":
