@@ -45,8 +45,9 @@ class AttentiveTransformer(tf.keras.Model):
             apply_glu=False,
         )
 
-    def call(self, x, prior_scales, training=None, alpha: float = 0.0):
-        x = self.block(x, training=training, alpha=alpha)
+    def call(self, inputs, training=None, alpha: float = 0.0):
+        x_for_mask, prior_scales = inputs
+        x = self.block(x_for_mask, training=training, alpha=alpha)
         return sparsemax(x * prior_scales)
 
 
