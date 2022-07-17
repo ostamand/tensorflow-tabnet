@@ -113,7 +113,7 @@ class TabNet(tf.keras.Model):
                 masked_features = tf.multiply(mask_values, features)
 
                 # entropy is used to penalize the amount of sparsity in feature selection
-                total_entropy = tf.reduce_mean(
+                total_entropy += tf.reduce_mean(
                     tf.reduce_sum(
                         tf.multiply(mask_values, tf.math.log(mask_values + 1e-15)),
                         axis=1,
